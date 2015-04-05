@@ -15,17 +15,28 @@ Parse.Cloud.define("swiped", function(request, response) {
     });
 });
 
-//Removes people who are not this gender
-function getPeopleOfGender(gender, peopleArray) {
+//Gets people who have a value for a field
+function getPeopleOfYValueFromXCharacteristic(fieldName, fieldValue, array) {
 
-    for(var i = 0; i < peopleArray.length; i++) {
+    var valid = [];
 
-        if(peopleArray[i].get("users_gender") != gender) {
-            peopleArray.splice(i, 1);
+    for(var i = 0; i < array.length; i++) {
+        if(array[i].get(fieldName) === fieldValue) {
+            valid.push(array[i]);
         }
     }
 
-    return peopleArray;
+    return valid;
+}
+
+//Gets people who are this gender
+function getPeopleOfGender(gender, peopleArray) {
+    return getPeopleOfYValueFromXCharacteristic("users_gender", gender, peopleArray);
+}
+
+//Gets people who go to this high school
+function getPeopleFromHighSchool(highschoolName, peopleArray) {
+    return getPeopleOfYValueFromXCharacteristic("users_highschool", gender, peopleArray);
 }
 
 //Returns an object with only the most important information
@@ -42,25 +53,6 @@ function getImportantParts(person) {
     return result;
 }
 
-Parse.Cloud.define("getPeopleToSwipe", function(request, response) {
-    var params = request.params;
-
-    var query = new Parse.Query("PromMeUser");
-    query.equalTo("users_facebook_id", params.myFBID);
-
-    query.find({
-        success: function(results) {
-
-        console.log("SIZE: " + results[0]);
-        var me = results[0];
-        console.log("ME: " + me.get("users_name"));
-
-        var alreadySwiped = me.swipedFacebookIDs;
-        
-        query = new Parse.Query("PromMeUser");
-        query.find({
-            success: function(results) {
-
 /* PARAMETERS
  * isLocation
  *      int distance
@@ -71,30 +63,48 @@ Parse.Cloud.define("getPeopleToSwipe", function(request, response) {
  * isGrade
  *      string grade */
 
-                var validPeople = [];
+Parse.Cloud.define("getPeopleToSwipe", function(request, response) {
+    var params = request.params;
 
-                console.log("BEFORE: " + results.length);
-                results = getPeopleOfGender("Female", results);
-                for(var i = 0; i < results.length; i++) {
+    var query = new Parse.Query("PromMeUser");
+    query.equalTo("users_facebook_id", params.myFBID);
 
-                    if(results[i].get("users_gender") != "Female") {
+    query.find({
+        success: function(results) {
+
+            var me = results[0];
+            var alreadySwiped = me.swipedFacebookIDs;
+        
+            query = new Parse.Query("PromMeUser");
+
+            if(params.isLocation) {
+                var distance = params.maxDistance;
+
+                query.withinMiles("users_hometown_geopoint", me.get("users_hometown_geopoint"), distance);
+            }
+
+            query.find({
+                success: function(results) {
+
+                    var validPeople = [];
+                    validPeople = getPeopleOfGender("Female", results);
+
+                    for(var i = 0; i < validPeople.length; i++) {
+                        validPeople[i] = getImportantParts(validPeople[i]);
                     }
-                    else {
-                        validPeople.push(getImportantParts(results[i]));//{"name": results[i].get("users_name"), "gender": results[i].get("users_gender")});
-                    }
+
+                    response.success(validPeople);
+                }, 
+                error: function(error) {
+                    console.log(error);
+                    response.error(error);
                 }
-
-                console.log("SIZE: " + results.length);
-                response.success(validPeople);
-        }, error: function(error) {
+            });
+        }, 
+        error: function(error) {
             console.log(error);
             response.error(error);
         }
-        });
-    }, error: function(error) {
-        console.log(error);
-        response.error(error);
-    }
     });
 });
 
