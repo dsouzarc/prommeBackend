@@ -12,6 +12,11 @@ Parse.Cloud.define("addUser", function(request, response) {
     user.set("users_gender", request.params.gender);
     user.set("users_grade", request.params.grade);
     user.set("users_hometown_geopoint", request.params.currentLocation);
+    user.set("profile_picture_one", request.params.profilePic1);
+    user.set("profile_picture_two", request.params.profilePic2);
+    user.set("profile_picture_three", request.params.profilePic3);
+    user.set("profile_picture_four", request.params.profilePic4);
+    user.set("profile_picture_five", request.params.profilePic5);
 
     user.save(null, {
         success: function(result) {
