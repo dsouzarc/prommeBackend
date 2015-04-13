@@ -26,7 +26,7 @@ Parse.Cloud.define("addUser", function(request, response) {
 Parse.Cloud.define("userExists", function(request, response) {
 
     var query = new Parse.Query("PromMeUser");
-    query.equalTo("facebookID", request.params.facebookID);
+    query.equalTo("users_facebook_id", request.params.facebookID);
 
     query.find({
         success: function(results) {
