@@ -1,11 +1,17 @@
 import config;
 import json, httplib;
 
+from random import randint;
+
+fullName = "Test User #: " + str(randint(0, 150));
+fbID = str(randint(1000, 100000));
+phoneNumber = str(randint(1000000000, 9999999999));
+
 params = {
-    "userFullName": "test one",
-    "fbID": "1111111",
+    "userFullName": fullName,
+    "fbID": fbID,
     "school": "Peddie",
-    "phoneNumber": "111111111",
+    "phoneNumber": phoneNumber,
     "gender": "Female",
     "grade": "Sophomore"
 }
@@ -20,5 +26,3 @@ connection.request('POST', '/1/functions/addUser', json.dumps(params), {
 });
 
 result = json.loads(connection.getresponse().read())
-
-print result
