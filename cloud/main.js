@@ -1,3 +1,60 @@
+Parse.Cloud.define("swiped", function(request, response) {
+    var query = new Parse.Query("PromMeUser");
+    query.equalTo("users_facebook_id", request.params.facebookID);
+
+    query.find({
+        success: function(results) {
+            for(var i = 0; i < results.length; i++) {
+                console.log("HERE:" + results[i].users_name);
+            }
+            console.log(request.params.facebookID + " SIZE: " + results.length);
+            response.success("YES");
+        }, error: function(error) {
+            response.error(error);
+        }
+    });
+});
+
+Parse.Cloud.define("findUserBasedOnSchoolGender", function(request, response) {
+
+    var query = new Parse.Query("PromMeUser");
+    query.equalTo("users_facebook_id", request.params.myFBID);
+
+    query.find().then(function(result) {
+
+        var alreadySwiped = result.swipedFacebookIDs;
+        
+        query = new Parse.Query("PromMeUser");
+        query.find({
+            success: function(results) {
+
+                var validPeople = [];
+
+                console.log("Reslults");
+
+                for(var i = 0; i < results.length; i++) {
+
+                    if(results[i].get("users_gender") == "Male") {
+                        console.log("Here: " + results[i].get("users_name"));
+                        var person = {
+                            "name": results[i].get("users_name"),
+                            "gender": results[i].get("users_gender"),
+                            "pic_one": results[i].get("profile_picture_one")
+                        };
+                        validPeople.push(person);
+                    }
+                }
+                console.log("SIZE: " + validPeople.length);
+
+                response.success(validPeople);
+        }, error: function(error) {
+            console.log(error);
+            response.error(error);
+        }
+        });
+    });
+});
+
 Parse.Cloud.define("addUser", function(request, response) {
 
     Parse.Cloud.useMasterKey();
