@@ -15,43 +15,88 @@ Parse.Cloud.define("swiped", function(request, response) {
     });
 });
 
-Parse.Cloud.define("findUserBasedOnSchoolGender", function(request, response) {
+//Removes people who are not this gender
+function getPeopleOfGender(gender, peopleArray) {
+
+    for(var i = 0; i < peopleArray.length; i++) {
+
+        if(peopleArray[i].get("users_gender") != gender) {
+            peopleArray.splice(i, 1);
+        }
+    }
+
+    return peopleArray;
+}
+
+//Returns an object with only the most important information
+function getImportantParts(person) {
+
+    var result = {
+        "name": person.get("users_name"),
+        "highschool": person.get("users_highschool"),
+        "grade": person.get("users_grade"),
+        "facebookID": person.get("users_facebook_id"),
+        "gender": person.get("users_gender")
+    }
+
+    return result;
+}
+
+Parse.Cloud.define("getPeopleToSwipe", function(request, response) {
+    var params = request.params;
 
     var query = new Parse.Query("PromMeUser");
-    query.equalTo("users_facebook_id", request.params.myFBID);
+    query.equalTo("users_facebook_id", params.myFBID);
 
-    query.find().then(function(result) {
+    query.find({
+        success: function(results) {
 
-        var alreadySwiped = result.swipedFacebookIDs;
+        console.log("SIZE: " + results[0]);
+        var me = results[0];
+        console.log("ME: " + me.get("users_name"));
+
+        var alreadySwiped = me.swipedFacebookIDs;
         
         query = new Parse.Query("PromMeUser");
         query.find({
             success: function(results) {
 
+/* PARAMETERS
+ * isLocation
+ *      int distance
+ * isHighSchool
+ *      string high school name
+ * isGender
+ *      string gender
+ * isGrade
+ *      string grade */
+
                 var validPeople = [];
 
-                console.log("Reslults");
-
+                console.log("BEFORE: " + results.length);
+                results = getPeopleOfGender("Female", results);
                 for(var i = 0; i < results.length; i++) {
 
-                    if(results[i].get("users_gender") == "Male") {
-                        console.log("Here: " + results[i].get("users_name"));
-                        var person = {
-                            "name": results[i].get("users_name"),
-                            "gender": results[i].get("users_gender"),
-                            "pic_one": results[i].get("profile_picture_one")
-                        };
-                        validPeople.push(person);
+                    if(results[i].get("users_gender") != "Female") {
+                        console.log("Removing...");
+                        results[i] = "NULL";
+                    }
+                    else {
+                        validPeople.push({"name": results[i].get("users_name"), "gender": results[i].get("users_gender")});
                     }
                 }
-                console.log("SIZE: " + validPeople.length);
 
+                console.log("SIZE: " + results.length);
                 response.success(validPeople);
         }, error: function(error) {
             console.log(error);
             response.error(error);
         }
         });
+    }, error: function(error) {
+        console.log(error);
+        response.error(error);
+    }
     });
 });
 
