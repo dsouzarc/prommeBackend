@@ -78,11 +78,9 @@ Parse.Cloud.define("getPeopleToSwipe", function(request, response) {
                 for(var i = 0; i < results.length; i++) {
 
                     if(results[i].get("users_gender") != "Female") {
-                        console.log("Removing...");
-                        results[i] = "NULL";
                     }
                     else {
-                        validPeople.push({"name": results[i].get("users_name"), "gender": results[i].get("users_gender")});
+                        validPeople.push(getImportantParts(results[i]));//{"name": results[i].get("users_name"), "gender": results[i].get("users_gender")});
                     }
                 }
 
