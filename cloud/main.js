@@ -1,19 +1,89 @@
-Parse.Cloud.define("swiped", function(request, response) {
-    var query = new Parse.Query("PromMeUser");
-    query.equalTo("users_facebook_id", request.params.facebookID);
+function getUserPointer(objectID) {
+    var pointer = {
+        "__type": "Pointer", 
+        "className": "PromMeUser",
+        "objectId": objectID
+    };
+    return pointer;
+}
 
-    query.find({
-        success: function(results) {
-            for(var i = 0; i < results.length; i++) {
-                console.log("HERE:" + results[i].users_name);
-            }
-            console.log(request.params.facebookID + " SIZE: " + results.length);
-            response.success("YES");
-        }, error: function(error) {
+Parse.Cloud.define("swipeRight", function(request, response) {
+
+    var myID = request.params.myFBID;
+    var yesID = request.params.yesFBID;
+
+    var query = new Parse.Query("PromMeUser");
+    query.equalTo("users_facebook_id", myID);
+
+    query.first({
+        success: function(me) {
+
+            query = new Parse.Query("PromMeUser");
+            query.equalTo("users_facebook_id", yesID);
+
+            query.first({
+                success: function(yes) {
+
+                    var swiped = me.relation("swiped");
+                    swiped.add(yes);
+                    
+                    var yesTo = me.relation("saidYesTo");
+                    yesTo.add(yes);
+
+                    me.save();
+
+                    var gotSaidYesTo = yes.relation("gotSaidYesToBy");
+                    gotSaidYesTo.add(me);
+
+                    yes.save();
+
+                    response.success("YES");
+                }, error: function(error) {
+                    response.error(error);
+                }
+            });
+        }, 
+        error: function(error) {
             response.error(error);
         }
     });
 });
+        
+
+
+Parse.Cloud.define("getUserPhoto", function(request, response) {
+
+    var query = new Parse.Query("PromMeUser");
+    query.equalTo("users_facebook_id", request.params.facebookID);
+
+    query.first({
+        success: function(user) {
+
+            switch(request.params.pictureNumber) {
+                case 1:
+                    response.success(user.get("profile_picture_one"));
+
+                case 2:
+                    response.success(user.get("profile_picture_two"));
+
+                case 3:
+                    response.success(user.get("profile_picture_three"));
+
+                case 4:
+                    response.success(user.get("profile_picture_four"));
+
+                case 5:
+                    response.success(user.get("profile_picture_five"));
+                default:
+                    response.success(user.get("profile_picture_one"));
+            }
+        }, 
+        error: function(error) {
+            response.error(error);
+        }
+    });
+});
+
 
 //Gets people who have a value for a field
 function getPeopleOfYValueFromXCharacteristic(fieldName, fieldValue, array) {
@@ -36,7 +106,7 @@ function getPeopleOfGender(gender, peopleArray) {
 
 //Gets people who go to this high school
 function getPeopleFromHighSchool(highschoolName, peopleArray) {
-    return getPeopleOfYValueFromXCharacteristic("users_highschool", gender, peopleArray);
+    return getPeopleOfYValueFromXCharacteristic("users_highschool", highschoolName, peopleArray);
 }
 
 //Returns an object with only the most important information
@@ -53,33 +123,23 @@ function getImportantParts(person) {
     return result;
 }
 
-/* PARAMETERS
- * isLocation
- *      int distance
- * isHighSchool
- *      string high school name
- * isGender
- *      string gender
- * isGrade
- *      string grade */
-
 Parse.Cloud.define("getPeopleToSwipe", function(request, response) {
+
     var params = request.params;
 
     var query = new Parse.Query("PromMeUser");
     query.equalTo("users_facebook_id", params.myFBID);
 
-    query.find({
-        success: function(results) {
+    query.first({
+        success: function(me) {
 
-            var me = results[0];
-            var alreadySwiped = me.swipedFacebookIDs;
+            var alreadySwiped = me.get("swiped");
         
             query = new Parse.Query("PromMeUser");
 
+            //QUERY BASED ON LOCATION
             if(params.isLocation) {
                 var distance = params.maxDistance;
-
                 query.withinMiles("users_hometown_geopoint", me.get("users_hometown_geopoint"), distance);
             }
 
@@ -87,8 +147,18 @@ Parse.Cloud.define("getPeopleToSwipe", function(request, response) {
                 success: function(results) {
 
                     var validPeople = [];
-                    validPeople = getPeopleOfGender("Female", results);
 
+                    //QUERY BASED ON GENDER
+                    if(params.isGender) {
+                        validPeople = getPeopleOfGender(params.gender, results);
+                    }
+
+                    //QUERY BASED ON SCHOOL
+                    if(params.isSchool) {
+                        validPeople = getPeopleFromHighSchool(params.highschool, validPeople);
+                    }
+
+                    //GET THE MOST IMPORTANT FIELDS FOR EACH PERSON
                     for(var i = 0; i < validPeople.length; i++) {
                         validPeople[i] = getImportantParts(validPeople[i]);
                     }
