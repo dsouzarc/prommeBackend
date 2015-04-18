@@ -59,6 +59,8 @@ Parse.Cloud.define("getUserPhoto", function(request, response) {
     query.first({
         success: function(user) {
 
+            console.log("NAME: " + user.get("users_name"));
+
             switch(request.params.pictureNumber) {
                 case 1:
                     response.success(user.get("profile_picture_one"));
