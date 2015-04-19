@@ -71,12 +71,22 @@ Parse.Cloud.define("swipeRight", function(request, response) {
                     otherPerson.save();
 
                     var otherPersonSaidYesTo = otherPerson.relation("saidYesTo");
+                    query = otherPersonSaidYesTo.query();
+                    query.equalTo("users_facebook_id", myID);
+                    query.find({
+                        success: function(matches) {
+                            console.log("NUMBER OF MATCHES: " + matches.length);
+                            response.success("YES");
+                        },
+                        error: function(error) {
+                            console.log(error);
+                        }
+                    });
 
-                    otherPersonSaidYesTo.query().find({
+                    /*otherPersonSaidYesTo.query().first({
                         success: function(allPeople) {
                             console.log("QUERYING");
                             for(var i = 0; i < allPeople.length; i++) {
-                                console.log("OTHER PERSON SAID YES TO: " + allPeople[i].get("users_facebook_id") + "\t ME: " + myID);
                                 if(allPeople[i].get("users_facebook_id") === myID) {
                                     console.log("MATCH");
                                 }
@@ -85,7 +95,7 @@ Parse.Cloud.define("swipeRight", function(request, response) {
                         }, error: function(error) {
                             console.log(error);
                         }
-                    });
+                    });*/
                 }, error: function(error) {
                     response.error(error);
                 }
