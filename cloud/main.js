@@ -75,7 +75,41 @@ Parse.Cloud.define("swipeRight", function(request, response) {
                     query.equalTo("users_facebook_id", myID);
                     query.find({
                         success: function(matches) {
-                            console.log("NUMBER OF MATCHES: " + matches.length);
+
+                            if(matches.length >= 0) {
+                                var matchedWith = me.relation("matchedWith");
+                                matchedWith.add(otherPerson);
+                                me.save();
+                                
+                                matchedWith = otherPerson.relation("matchedWith");
+                                matchedWith.add(me);
+                                otherPerson.save();
+
+                                //Notify both people
+                                Parse.Push.send({
+                                    channels: [("P" + myID)],
+                                    data:{
+                                        alert: "New match with " + otherPerson.get("users_name")
+                                    }
+                                }, {
+                                    success: function() {
+                                    }, error: function(error) {
+                                        console.log(error);
+                                    }
+                                });
+
+                                Parse.Push.send({
+                                    channels: [("P" + yesID)],
+                                    data:{
+                                        alert: "New match with " + me.get("users_name")
+                                    }
+                                }, {
+                                    success: function() {
+                                    }, error: function(error) {
+                                        console.log(error);
+                                    }
+                                });
+                            }
                             response.success("YES");
                         },
                         error: function(error) {
