@@ -206,9 +206,10 @@ function getImportantParts(person) {
 Parse.Cloud.define("getPeopleToSwipe", function(request, response) {
 
     var params = request.params;
+    var myFBID = params.myFBID;
 
     var query = new Parse.Query("PromMeUser");
-    query.equalTo("users_facebook_id", params.myFBID);
+    query.equalTo("users_facebook_id", myFBID);
 
     query.first({
         success: function(me) {
@@ -245,8 +246,21 @@ Parse.Cloud.define("getPeopleToSwipe", function(request, response) {
 
                             for(var i = 0; i < validPeople.length; i++) {
 
+                                var shouldBeAdded = true;
+
+                                for(var y = 0; y < peopleAlreadySwiped.length; y++) {
+                                    if(peopleAlreadySwiped[y].get("users_facebook_id") === myFBID) {
+                                        shouldBeAdded = false;
+                                        y = peopleAlreadySwiped.length;
+                                    }
+                                }
+
                                 //Remove myself from the list
                                 if(validPeople[i].get("users_facebook_id") != params.myFBID) {
+                                    shouldBeAdded = false;
+                                }
+
+                                if(shouldBeAdded) {
                                     bestResults.push(getImportantParts(validPeople[i]));
                                 }
                              }
