@@ -64,20 +64,22 @@ Parse.Cloud.define("getUserPhoto", function(request, response) {
             switch(request.params.pictureNumber) {
                 case 1:
                     response.success(user.get("profile_picture_one"));
-
+                    break;
                 case 2:
                     response.success(user.get("profile_picture_two"));
-
+                    break;
                 case 3:
                     response.success(user.get("profile_picture_three"));
-
+                    break;
                 case 4:
                     response.success(user.get("profile_picture_four"));
-
+                    break;
                 case 5:
                     response.success(user.get("profile_picture_five"));
+                    break;
                 default:
                     response.success(user.get("profile_picture_one"));
+                    break;
             }
         }, 
         error: function(error) {
