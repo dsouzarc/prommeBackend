@@ -55,22 +55,37 @@ Parse.Cloud.define("swipeRight", function(request, response) {
             query.equalTo("users_facebook_id", yesID);
 
             query.first({
-                success: function(yes) {
+                success: function(otherPerson) {
 
                     var swiped = me.relation("swiped");
-                    swiped.add(yes);
+                    swiped.add(otherPerson);
                     
                     var yesTo = me.relation("saidYesTo");
-                    yesTo.add(yes);
+                    yesTo.add(otherPerson);
 
                     me.save();
 
-                    var gotSaidYesTo = yes.relation("gotSaidYesToBy");
+                    var gotSaidYesTo = otherPerson.relation("gotSaidYesToBy");
                     gotSaidYesTo.add(me);
 
-                    yes.save();
+                    otherPerson.save();
 
-                    response.success("YES");
+                    var otherPersonSaidYesTo = otherPerson.relation("saidYesTo");
+
+                    otherPersonSaidYesTo.query().find({
+                        success: function(allPeople) {
+                            console.log("QUERYING");
+                            for(var i = 0; i < allPeople.length; i++) {
+                                console.log("OTHER PERSON SAID YES TO: " + allPeople[i].get("users_facebook_id") + "\t ME: " + myID);
+                                if(allPeople[i].get("users_facebook_id") === myID) {
+                                    console.log("MATCH");
+                                }
+                            }
+                            response.success("YES");
+                        }, error: function(error) {
+                            console.log(error);
+                        }
+                    });
                 }, error: function(error) {
                     response.error(error);
                 }
@@ -81,7 +96,6 @@ Parse.Cloud.define("swipeRight", function(request, response) {
         }
     });
 });
-        
 
 Parse.Cloud.define("getUserPhoto", function(request, response) {
 
