@@ -7,6 +7,39 @@ function getUserPointer(objectID) {
     return pointer;
 }
 
+Parse.Cloud.define("swipeLeft", function(request, response) {
+
+    var myID = request.params.myFBID;
+    var noID = request.params.noFBID;
+
+    var query = new Parse.Query("PromMeUser");
+    query.equalTo("users_facebook_id", myID);
+
+    query.first({
+        success: function(me) {
+
+            query = new Parse.Query("PromMeUser");
+            query.equalTo("users_facebook_id", noID);
+
+            query.first({
+                success: function(no) {
+
+                    var swiped = me.relation("swiped");
+                    swiped.add(no);
+
+                    me.save();
+
+                    response.success("YES");
+                }, error: function(error) {
+                    response.error(error);
+                }
+            });
+        }, error: function(error) {
+            response.error(error);
+        }
+    });
+});
+
 Parse.Cloud.define("swipeRight", function(request, response) {
 
     var myID = request.params.myFBID;
@@ -49,7 +82,6 @@ Parse.Cloud.define("swipeRight", function(request, response) {
     });
 });
         
-
 
 Parse.Cloud.define("getUserPhoto", function(request, response) {
 
