@@ -116,20 +116,6 @@ Parse.Cloud.define("swipeRight", function(request, response) {
                             console.log(error);
                         }
                     });
-
-                    /*otherPersonSaidYesTo.query().first({
-                        success: function(allPeople) {
-                            console.log("QUERYING");
-                            for(var i = 0; i < allPeople.length; i++) {
-                                if(allPeople[i].get("users_facebook_id") === myID) {
-                                    console.log("MATCH");
-                                }
-                            }
-                            response.success("YES");
-                        }, error: function(error) {
-                            console.log(error);
-                        }
-                    });*/
                 }, error: function(error) {
                     response.error(error);
                 }
@@ -227,8 +213,6 @@ Parse.Cloud.define("getPeopleToSwipe", function(request, response) {
     query.first({
         success: function(me) {
 
-            var alreadySwiped = me.get("swiped");
-        
             query = new Parse.Query("PromMeUser");
 
             //QUERY BASED ON LOCATION
@@ -252,12 +236,27 @@ Parse.Cloud.define("getPeopleToSwipe", function(request, response) {
                         validPeople = getPeopleFromHighSchool(params.highschool, validPeople);
                     }
 
-                    //GET THE MOST IMPORTANT FIELDS FOR EACH PERSON
-                    for(var i = 0; i < validPeople.length; i++) {
-                        validPeople[i] = getImportantParts(validPeople[i]);
-                    }
+                    var alreadySwiped = me.relation("swiped").query();
+                    alreadySwiped.find({
 
-                    response.success(validPeople);
+                        success: function(peopleAlreadySwiped) {
+                            
+                            var bestResults = [];
+
+                            for(var i = 0; i < validPeople.length; i++) {
+
+                                //Remove myself from the list
+                                if(validPeople[i].get("users_facebook_id") != params.myFBID) {
+                                    bestResults.push(getImportantParts(validPeople[i]));
+                                }
+                             }
+
+                            response.success(bestResults);
+                        },
+                        error: function(error) {
+                            response.error(error);
+                        }
+                    });
                 }, 
                 error: function(error) {
                     console.log(error);
