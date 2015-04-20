@@ -398,16 +398,30 @@ Parse.Cloud.define("userExists", function(request, response) {
     var query = new Parse.Query("PromMeUser");
     query.equalTo("users_facebook_id", request.params.facebookID);
 
-    query.find({
-        success: function(results) {
-            if(results.length > 0) {
-                response.success("YES");
-            }
-            else {
-                response.success("NO");
-            }
+    query.first({
+        success: function(me) {
+
+            //Check to see if the person has too many violations
+            var reports = me.relation("reportedBy").query();
+            query.find({
+                success: function(allReports) {
+
+                    //If more than 10 reports, don't let them login
+                    if(allReports.length > 10) {
+                        response.success("VIOLATION");
+                    }
+
+                    else {
+                        response.success("YES");
+                    }
+                    return;
+                }, error: function(error) {
+                    console.log(error);
+                    response.success("YES");
+                }
+            });
         }, error: function(error) {
-            response.error(error);
+            response.success("NO");
         }
     });
 });
