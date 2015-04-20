@@ -1,3 +1,43 @@
+Parse.Cloud.define("reportUser", function(request, reponse) {
+
+    var myFBID = request.params.myFBID;
+    var personToReportFBID = request.params.personToReportFBID;
+
+    var query = new Parse.Query("PromMeUser");
+    query.equalTo("users_facebook_id", myFBID);
+
+    query.first({
+        success: function(me) {
+
+            query = new Parse.Query("PromMeUser");
+            query.equalTo("users_facebook_id", personToReportFBID);
+
+            query.first({
+                success: function(personToReport) {
+
+                    //Add the person to the list of reports
+                    var previousReports = personToReport.relation("reportedBy");
+                    previousReports.add(me);
+
+                    //And then essentially swipe left on them so they never appear
+                    var swiped = me.relation("swiped");
+                    swiped.add(personToReport);
+
+                    //Save everything
+                    me.save();
+                    personToReport.save();
+
+                    reponse.success("YES");
+                }, error: function(error) {
+                    response.error(error);
+                }
+            });
+        }, error: function(error) {
+            response.error(error);
+        }
+    });
+});
+
 Parse.Cloud.define("getMatches", function(request, response) {
 
     var myFBID = request.params.myFBID;
