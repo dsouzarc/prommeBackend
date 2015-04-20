@@ -1,3 +1,46 @@
+Parse.Cloud.define("getMatches", function(request, response) {
+
+    var myFBID = request.params.myFBID;
+
+    var query = new Parse.Query("PromMeUser");
+    query.equalTo("users_facebook_id", myFBID);
+
+    query.first({
+        success: function(me) {
+
+            query = me.relation("matchedWith").query();
+
+            query.find({
+                success: function(results) {
+
+                    var matches = [];
+
+                    for(var i = 0; i < results.length; i++) {
+                        var person = results[i];
+                        var match = {
+                            "name": person.get("users_name"),
+                            "highschool": person.get("users_highschool"),
+                            "grade": person.get("users_grade"),
+                            "fbid": person.get("users_facebook_id"),
+                            "gender": person.get("users_gender"),
+                            "phone": person.get("users_phone_number"),
+                            "profilePhoto1": person.get("profile_picture_one")
+                        };
+
+                        matches.push(match);
+                    }
+
+                    response.success(matches);
+                }, error: function(error) {
+                    response.error(error);
+                }
+            });
+        }, error: function(error) {
+            response.error(error);
+        }
+    });
+});
+
 function getUserPointer(objectID) {
     var pointer = {
         "__type": "Pointer", 
