@@ -40,6 +40,52 @@ Parse.Cloud.define("reportUser", function(request, reponse) {
 
 Parse.Cloud.define("getMatches", function(request, response) {
 
+    var query = new Parse.Query("PromMeUser");
+    query.equalTo("users_facebook_id", request.params.myFBID);
+
+    query.first({
+        success: function(me) {
+            query = new Parse.Query("PromMeUser");
+
+            query.find({
+                success: function(everyone) {
+                    console.log("EVERYONE: " + everyone.length);
+                    var matches = [];
+
+                    for(var i = 0; i < everyone.length; i++) {
+                        var person = everyone[i];
+
+                        if(person.get("users_name") === "Ryan D'souza") {
+                        }
+                        else {
+                        var match = {
+                            "name": person.get("users_name"),
+                            "highschool": person.get("users_highschool"),
+                            "grade": person.get("users_grade"),
+                            "fbid": person.get("users_facebook_id"),
+                            "gender": person.get("users_gender"),
+                            "phone": person.get("users_phone_number"),
+                            "profilePhoto1": person.get("profile_picture_one")
+                        };
+                        matches.push(match);
+                        }
+                    }
+
+                    response.success(matches);
+                }, error: function(error) {
+                    response.error(error);
+                }
+            });
+        }, error: function(error) {
+            response.error(error);
+        }
+    });
+});
+
+            
+
+Parse.Cloud.define("getMatches1", function(request, response) {
+
     var myFBID = request.params.myFBID;
 
     var query = new Parse.Query("PromMeUser");
@@ -54,6 +100,7 @@ Parse.Cloud.define("getMatches", function(request, response) {
                 success: function(results) {
 
                     var matches = [];
+                    console.log("MATCHES: " + matches.length);
 
                     for(var i = 0; i < results.length; i++) {
                         var person = results[i];
@@ -128,6 +175,7 @@ Parse.Cloud.define("swipeRight", function(request, response) {
     var myID = request.params.myFBID;
     var yesID = request.params.yesFBID;
 
+console.log("MY ID: " + myID);
     var query = new Parse.Query("PromMeUser");
     query.equalTo("users_facebook_id", myID);
 
@@ -139,6 +187,9 @@ Parse.Cloud.define("swipeRight", function(request, response) {
 
             query.first({
                 success: function(otherPerson) {
+                    
+                    console.log("OTHER PERSON: " + otherPerson.get("users_name"));
+                    console.log("ME: " + me.get("users_name"));
 
                     var swiped = me.relation("swiped");
                     swiped.add(otherPerson);
@@ -254,7 +305,9 @@ function getPeopleOfYValueFromXCharacteristic(fieldName, fieldValue, array) {
     var valid = [];
 
     for(var i = 0; i < array.length; i++) {
+        console.log("GENDER in for: " + array[i].get(fieldName));
         if(array[i].get(fieldName) === fieldValue) {
+            console.log("Getting gender..." + array[i].get("users_name"));
             valid.push(array[i]);
         }
     }
@@ -300,7 +353,8 @@ Parse.Cloud.define("getPeopleToSwipe", function(request, response) {
             query = new Parse.Query("PromMeUser");
 
             //QUERY BASED ON LOCATION
-            if(params.isLocation) {
+            if(params.isLocation == 1) {
+                console.log("IS LOCATION");
                 var distance = params.maxDistance;
                 query.withinMiles("users_hometown_geopoint", me.get("users_hometown_geopoint"), distance);
             }
@@ -308,31 +362,57 @@ Parse.Cloud.define("getPeopleToSwipe", function(request, response) {
             query.find({
                 success: function(results) {
 
-                    var validPeople = [];
+                    var validPeople = results; //[];
+
 
                     //QUERY BASED ON GENDER
-                    if(params.isGender) {
-                        validPeople = getPeopleOfGender(params.gender, results);
+                    if(params.isGender == 1) {
+                        console.log("IS GENDER");
+
+                        for(var i = 0; i < results.length; i++) {
+                            console.log("RESULTS: " + results[i].get("users_name"));
+                        }
+
+                        //validPeople = getPeopleOfGender(params.gender, results);
+                        console.log(params.gender);
                     }
 
                     //QUERY BASED ON SCHOOL
-                    if(params.isSchool) {
-                        validPeople = getPeopleFromHighSchool(params.highschool, validPeople);
+                    if(params.isSchool == 1) {
+                        console.log("BASED ON SCHOOL");
+                        //validPeople = getPeopleFromHighSchool(params.highschool, validPeople);
                     }
 
                     var alreadySwiped = me.relation("swiped").query();
                     alreadySwiped.find({
 
                         success: function(peopleAlreadySwiped) {
-                            
+
                             var bestResults = [];
+
+                            if(peopleAlreadySwiped.length == 0 || 3 == 3) {
+                                console.log("DOWN HERE");
+                                
+                                for(var i = 0; i < validPeople.length; i++) {
+                            
+                                    if(validPeople[i].get("users_name") === me.get("users_name")) {
+                                    }
+                                    else {
+                                        bestResults.push(getImportantParts(validPeople[i]));
+                                        console.log("VALID PERSON: " + validPeople[i].get("users_name"));
+                                     }
+                                }
+                                response.success(bestResults);
+                                return;
+                            }
 
                             for(var i = 0; i < validPeople.length; i++) {
 
                                 var shouldBeAdded = true;
 
                                 for(var y = 0; y < peopleAlreadySwiped.length; y++) {
-                                    if(peopleAlreadySwiped[y].get("users_facebook_id") === myFBID) {
+                                    console.log("Already swiped: " + peopleAlreadySwiped[y].get("users_name"));
+                                    if(peopleAlreadySwiped[y].get("users_facebook_id") == myFBID) {
                                         shouldBeAdded = false;
                                         y = peopleAlreadySwiped.length;
                                     }
